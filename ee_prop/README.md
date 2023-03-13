@@ -6,7 +6,7 @@ The code is designed to be used with the esp8266 and esp32. When running on an E
 ### Features
 
 Connects to wifi with low power transmission. 
-prop automaitcally connects to the mqtt server and subscribes to the following topics:
+prop automatically connects to the mqtt server and subscribes to the following topics:
 
 ```
 "eeprop"
