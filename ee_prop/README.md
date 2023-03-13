@@ -24,7 +24,7 @@ the prop will listen for the following commands by default:
 
 ```
 reboot
-
+e.g mosquitto_pub -h mqtt_broker -t "eeprop" -m "reboot"
 ```
 
 ### Installation
