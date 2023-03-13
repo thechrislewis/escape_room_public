@@ -1,6 +1,6 @@
 ## EE_PROP
 
-EE_Prop is a class to manage the wifi, mqtt and ota functions in and escape room environment.
+EE_Prop is a class to manage the wifi, mqtt and ota functions of a prop in an escape room environment.
 The code is designed to be used with the esp8266 and esp32. When running on an ESP32 the code will use both cores of the ESP32. The code is designed to be used with the Arduino IDE and VS Code using the Arduino extension
 
 ### Features
