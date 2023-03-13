@@ -10,7 +10,7 @@ prop automaitcally connects to the mqtt server and subscribes to the following t
 
 ```
 "eeprop"
-room_name
+ROOM
 /cmnd/NAME
 /cmnd/NAME/prop_id
 
