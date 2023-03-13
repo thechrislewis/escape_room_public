@@ -49,14 +49,19 @@ Only the prop with the same prop_id can be addressed by the /cmnd/NAME/prop_id t
 ##### ee_prop myProp(ROOM_NAME, CLASS, USE_ID, VERSION);
 
 ROOM_NAME: the name of the room
+
 CLASS: the class or name of the prop ( eg. RELAY, KEYPAD , UNIQUE_NAME )
-USE_ID: boolean to use the id or not - this will attach the id to the mqtt topics
+
+USE_ID: boolean to use the id or not - this will attach the id to the mqtt topics.
+
 VERSION: the version of the prop code
 
 ##### myProp.begin(SSID, PASSWORD, MQTT_SERVER);
 
 SSID: the wifi ssid
+
 PASSWORD: the wifi password
+
 MQTT_SERVER: the mqtt server
 
 ##### myProp.loop();
