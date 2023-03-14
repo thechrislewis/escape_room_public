@@ -180,7 +180,7 @@ void setup()
 
   prop.begin(ssid, password, mqtt_server);
   prop.addCallback(process_message);
-  prop.setUpdateInterval(30000); // internal in ms to send system 'uptime' message
+  prop.setUpdateInterval(30000); // interval in ms to send system 'uptime' message
 
   // initialise prop specific items ( tones, leds, displays etc)
 }
