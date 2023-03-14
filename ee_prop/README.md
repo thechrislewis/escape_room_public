@@ -72,4 +72,7 @@ MQTT_SERVER: the mqtt server
 
 This function must be called in the loop function of the arduino sketch if you are using the esp8266. If you are using the esp32 the loop function is called automatically and handled by the library. 
 
+## to do
+
+1. mutex for mqtt.publish
 
