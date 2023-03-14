@@ -24,7 +24,6 @@ const char *mqtt_server = "192.168.1.1";
 #endif
 
 #include <ArduinoJson.h>
-#include "config.h"
 #include <ee_prop.h>
 
 #ifdef USE_BUZZER
