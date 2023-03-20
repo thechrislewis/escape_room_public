@@ -2,7 +2,7 @@
 #define EE_PROP_H
 
 #define MAX_TOPICS 10
-#define CORE 0  //define which core to run on if ESP32
+#define CORE 1 // define which core to run on if ESP32
 
 // #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -55,8 +55,8 @@ private:
     void (*_myStatusCallback)(JsonObject &);
 
 public:
-    ee_prop( const char *room, const char *name, bool useId, const char *version);
-    //ee_prop(const char *name, bool useId, const char *version);
+    ee_prop(const char *room, const char *name, bool useId, const char *version);
+    // ee_prop(const char *name, bool useId, const char *version);
 
     ~ee_prop();
 
@@ -71,7 +71,11 @@ public:
     void addCallback(void (*myCallback)(char *, byte *, unsigned int));
     // send boot
     void sendBoot();
+
     // send status
+    void sendStatus();
+
+    // send MQTT
     void sendMQTT(char *topic, DynamicJsonDocument &doc, bool retain);
     // update interval
     void setUpdateInterval(unsigned long interval);

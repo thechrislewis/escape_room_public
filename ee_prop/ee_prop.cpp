@@ -1,10 +1,21 @@
 /*
-inital code for ee_prop library 2nd version
+version 1.0.1
+
+Change Log
+
+v1.0.0 - 2023-03-01 - Initial release
+                    - Added support for ESP32, ESP8266.
+v1.0.1 - 2023-03-19 - Moved sys status message to this library. Sends enabled, solved and active status 
+                    - puzzle specific messages are responsibility of the puzzle program.
+                    - Sends status after every received message.
+
+
+
 */
 
 #include "ee_prop.h"
 
-//#define DEBUG_ON
+// #define DEBUG_ON
 
 #ifdef DEBUG_ON
 
@@ -25,6 +36,8 @@ ESP8266WebServer server(80);
 WebServer server(80);
 #endif
 
+String message;
+
 // constructor. Set name and flag to use chipId in topics
 ee_prop::ee_prop(const char *room, const char *name, bool useId, const char *version)
 {
@@ -32,6 +45,8 @@ ee_prop::ee_prop(const char *room, const char *name, bool useId, const char *ver
     _name = String(name);
     _version = String(version);
     _room = String(room);
+
+    message = _name + String(" <a href=\"") + String("/update\"> UPDATE </a>");
 
     // set chipId
 
@@ -76,7 +91,23 @@ ee_prop::~ee_prop()
 void ee_prop::begin(const char *ssid, const char *password, const char *mqtt_server)
 {
     // set WiFi Tx Power Level
-    wifi_power_t txPower = WIFI_POWER_2dBm;
+    /*
+    WIFI_POWER_19_5dBm = 78,// 19.5dBm
+    WIFI_POWER_19dBm = 76,// 19dBm
+    WIFI_POWER_18_5dBm = 74,// 18.5dBm
+    WIFI_POWER_17dBm = 68,// 17dBm
+    WIFI_POWER_15dBm = 60,// 15dBm
+    WIFI_POWER_13dBm = 52,// 13dBm
+    WIFI_POWER_11dBm = 44,// 11dBm
+    WIFI_POWER_8_5dBm = 34,// 8.5dBm
+    WIFI_POWER_7dBm = 28,// 7dBm
+    WIFI_POWER_5dBm = 20,// 5dBm
+    WIFI_POWER_2dBm = 8,// 2dBm
+    WIFI_POWER_MINUS_1dBm = -4// -1dBm
+    */
+#ifdef ESP32
+    wifi_power_t txPower = WIFI_POWER_5dBm;
+#endif
 
     DEBUGprint("NAME: ");
     DEBUGprintln(_name);
@@ -92,24 +123,12 @@ void ee_prop::begin(const char *ssid, const char *password, const char *mqtt_ser
     DEBUGprintln(chipId);
 
     // connect to WiFi. Reboot after 10 fail attempts
+
+    DEBUGprintln("Connecting to WiFi");
+
     WiFi.hostname(_name);
     WiFi.disconnect();
     WiFi.mode(WIFI_STA);
-
-    DEBUGprint("WiFi Tx Power Level set to: ");
-
-#ifdef ESP32
-    DEBUGprintln(WiFi.getTxPower());
-    WiFi.setTxPower(txPower);
-    DEBUGprint("WiFi Tx Power Level changed to: ");
-    DEBUGprintln(WiFi.getTxPower());
-#else
-    WiFi.setOutputPower(txPower);
-    DEBUGprint("WiFi Tx Power Level changed to: ");
-    DEBUGprintln(txPower);
-#endif
-
-    DEBUGprintln("Connecting to WiFi");
 
     WiFi.begin(ssid, password);
     int i = 0;
@@ -120,17 +139,31 @@ void ee_prop::begin(const char *ssid, const char *password, const char *mqtt_ser
         delay(100);
         DEBUGprint(".");
         i++;
-        if (i > 30)
+        if (i > 50)
         {
             ESP.restart();
         }
     }
 
     // print connected
-
     DEBUGprintln("WiFi connected");
     DEBUGprint("IP address: ");
     DEBUGprintln(WiFi.localIP());
+
+    delay(500);
+
+#ifdef ESP32
+
+    WiFi.setTxPower(txPower);
+
+    DEBUGprint("WiFi Tx Power Level changed to: ");
+    DEBUGprintln(WiFi.getTxPower());
+
+#else
+    // set power for esp8266
+    WiFi.setOutputPower(10);
+
+#endif
 
     // set up MQTT client
     _mqtt_client.setClient(_wifi_client);
@@ -148,9 +181,7 @@ void ee_prop::begin(const char *ssid, const char *password, const char *mqtt_ser
     reconnect();
 
     server.on("/", []()
-              {
-    String message = String(" <a href=\"") + String("/update\"> UPDATE </a>");
-    server.send(200, "text/html", message.c_str()); });
+              { server.send(200, "text/html", message.c_str()); });
 
     ElegantOTA.begin(&server); // Start ElegantOTA
     server.begin();
@@ -171,7 +202,7 @@ void ee_prop::begin(const char *ssid, const char *password, const char *mqtt_ser
                 vTaskDelay(10);
             }
         },
-        "ee_prop", 4096, this, 1, NULL, CORE);
+        "ee_prop", 8192, this, 1, NULL, CORE);
 
 #endif
 }
@@ -214,6 +245,7 @@ void ee_prop::reconnect()
         {
             ESP.restart();
         }
+        delay(1000);
     }
 }
 
@@ -224,15 +256,20 @@ void ee_prop::loop()
     // check wifi connection and reconnect if needed
     if (WiFi.status() != WL_CONNECTED && millis() - lastMillis > 5000)
     {
+        DEBUGprintln("WiFi disconnected");
         WiFi.disconnect();
         WiFi.reconnect();
         lastMillis = millis();
+        delay(500);
     }
     else
     {
         if (!_mqtt_client.connected())
         {
+            DEBUGprintln("MQTT disconnected");
             reconnect();
+            _mqtt_client.setKeepAlive(30);
+            delay(500);
         }
         _mqtt_client.loop();
     }
@@ -242,20 +279,35 @@ void ee_prop::loop()
     // send update every 30 seconds
     if (millis() > sendStatusMillis)
     {
-        // create dynamic json object to send to broker
-        DynamicJsonDocument doc(256);
+        sendStatus();
+        sendStatusMillis = millis() + updateInterval;
+    }
+}
 
-        doc["sys"]["uptime"] = millis() / 1000; // uptime
+void ee_prop::sendStatus()
+{
+    // send name and wifi status using sendJson
+    DEBUGprintln("Sending status");
+
+    // create dynamic json object to send to broker
+    DynamicJsonDocument doc(256);
+
+    doc["sys"]["uptime"] = millis() / 1000; // uptime
+    // send enable status
+    doc["sys"]["enabled"] = _Enabled;
+    // send active status
+    doc["sys"]["active"] = _Active;
+    // send solved status
+    doc["sys"]["solved"] = _Solved;
 
 // get core we're running on
 #ifdef ESP32
-        doc["sys"]["core"] = xPortGetCoreID();
+    doc["sys"]["core"] = xPortGetCoreID();
+    doc["TxPower"] = WiFi.getTxPower();
 #endif
 
-        // call sendJson function to send json object to broker
-        sendMQTT(pubTopic, doc, true);
-        sendStatusMillis = millis() + updateInterval;
-    }
+    // send json object to broker
+    sendMQTT(pubTopic, doc, true);
 }
 
 // send esp boot info to MQTT broker
@@ -271,6 +323,8 @@ void ee_prop::sendBoot()
 
 #ifdef ESP32
     doc["TxPower"] = WiFi.getTxPower();
+    doc["app"]["core"] = xPortGetCoreID();
+
 #endif
 
     doc["ssid"] = WiFi.SSID();
@@ -304,8 +358,9 @@ void ee_prop::callback(char *topic, byte *payload, unsigned int length)
     if (strncmp((char *)payload, "reboot", 6) == 0)
     {
         DEBUGprintln("Rebooting...");
-        // mqtt disconnect
-        _mqtt_client.disconnect();
+        _mqtt_client.disconnect();  // mqtt disconnect
+
+        delay(1000);
         // shutdown wifi
         WiFi.disconnect();
         WiFi.mode(WIFI_OFF);
@@ -316,9 +371,9 @@ void ee_prop::callback(char *topic, byte *payload, unsigned int length)
 
     // call user callback function if exists
     if (_myCallback != NULL)
-    {
         _myCallback(topic, payload, length);
-    }
+    
+    sendStatus();
 }
 
 // add user callback function
@@ -337,6 +392,7 @@ void ee_prop::sendMQTT(char *topic, DynamicJsonDocument &doc, bool retain)
     _mqtt_client.publish(topic, json.c_str(), retain);
     DEBUGprint("JSON sent: ");
     DEBUGprintln(json);
+    _mqtt_client.loop();
 }
 
 // set update interval

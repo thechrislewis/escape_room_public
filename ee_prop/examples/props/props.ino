@@ -1,12 +1,19 @@
+/*
+Changelog.
+v 0.1 initial release
+v 0.2 Moved more status messages to library. user status now only sent if prop.enabled is true.
+
+*/
+
 #define ROOM "room"
 #define NAME "template"
 #define USEID true
-#define VERSION "0.1"
+#define VERSION "0.2"
 #define DEBUG_ON
 
 // change as required for your network
-const char *ssid = "ssid";
-const char *password = "password";
+const char *ssid = "***";
+const char *password = "****";
 const char *mqtt_server = "192.168.1.1";
 
 // #define USE_BUZZER
@@ -24,6 +31,7 @@ const char *mqtt_server = "192.168.1.1";
 #endif
 
 #include <ArduinoJson.h>
+#include "config.h"
 #include <ee_prop.h>
 
 #ifdef USE_BUZZER
@@ -40,6 +48,7 @@ const char *mqtt_server = "192.168.1.1";
 #endif
 
 ee_prop prop(ROOM, NAME, USEID, VERSION);
+unsigned long updateInterval = 30000; // interval in ms to send status message
 
 // callback function for MQTT messages
 // this is called when a message is received on the subscribed topic
@@ -132,10 +141,11 @@ void sendStatus()
 {
 
   DynamicJsonDocument doc(256);
-  doc["uptime"] = millis() / 1000;
+  // user information specific to this prop eg peripheral information such as rfid fw version
+  doc["device"]["info"] = "not found";
 
-#ifdef ESP32
-  doc["status"]["core"] = xPortGetCoreID();
+#ifdef USE_BUZZER
+  doc["info"]["buzzer"] = true;
 #endif
 
   prop.sendMQTT(prop.getPubTopic(), doc, false);
@@ -144,27 +154,38 @@ void sendStatus()
 // activate function
 void activate()
 {
+  // do stuff to activate prop
+  // set/reset any variables
+  // re-initialise any peripherals if required
   prop.setActive(true);
 }
 
 void deactivate()
 {
+  // opposite of activate
   prop.setActive(false);
 }
 
 void enable()
 {
+  // do stuff to enable prop
+  // eg turn on leds, displays etc
   prop.setEnabled(true);
 }
 
 void disable()
 {
+  // do stuff to disable prop
+  // eg turn off leds, displays etc
   prop.setEnabled(false);
 }
 
 void solve()
 {
+  // do stuff on solve
+  // eg. turn leds green, update displays etc
   prop.setSolved(true);
+  deactivate();
 }
 
 void unsolve()
@@ -180,17 +201,19 @@ void setup()
 
   prop.begin(ssid, password, mqtt_server);
   prop.addCallback(process_message);
-  prop.setUpdateInterval(30000); // interval in ms to send system 'uptime' message
+  prop.setUpdateInterval(updateInterval);
 
   // initialise prop specific items ( tones, leds, displays etc)
+  // eg. pinMode(ledPin, OUTPUT);
+  
 }
 
-unsigned long timer1;
 void loop()
 {
 
-#ifdef ESP8266
-  // only required for ESP8266 - ESP32 is handled by the library
+  static unsigned long timer1 = 0;
+
+#ifdef ESP8266 // only required for ESP8266 - ESP32 is handled by the library
   prop.loop();
 #endif
 
@@ -199,9 +222,9 @@ void loop()
     // do stuff when puzzle is active
   }
 
-  if (millis() > timer1)
+  if (prop.isEnabled() && millis() > timer1)
   {
-    timer1 = millis() + 20000;
+    timer1 = millis() + updateInterval;
     sendStatus();
   }
 }
