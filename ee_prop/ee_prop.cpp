@@ -287,7 +287,7 @@ void ee_prop::loop()
 
 void ee_prop::sendStatus()
 {
-    // send name and wifi status using sendJson
+    // send name and wifi status using sendMQTT
     DEBUGprintln("Sending status");
 
     // create dynamic json object to send to broker
@@ -314,7 +314,7 @@ void ee_prop::sendStatus()
 // send esp boot info to MQTT broker
 void ee_prop::sendBoot()
 {
-    // send name and wifi status using sendJson
+    // send name and wifi status using sendMQTT
     DEBUGprintln("Sending boot info");
 
     DynamicJsonDocument doc(256);
