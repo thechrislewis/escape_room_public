@@ -277,7 +277,7 @@ void ee_prop::loop()
     server.handleClient();
 
     // send update every 30 seconds
-    if (millis() > sendStatusMillis)
+    if (updateInterval > 0 && millis() > sendStatusMillis)
     {
         sendStatus();
         sendStatusMillis = millis() + updateInterval;
