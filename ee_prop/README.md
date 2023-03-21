@@ -20,6 +20,9 @@ the prop will publish the following topics:
 /stat/NAME or /stat/NAME/prop_id ( if USE_ID is true )
 ```
 
+The prop will send status periodically which includes:
+uptime, active, enabled and solved status.
+
 the prop will listen for the following commands by default:
 
 ```
