@@ -9,6 +9,7 @@ v1.0.1 - 2023-03-19 - Moved sys status message to this library. Sends enabled, s
                     - puzzle specific messages are responsibility of the puzzle program.
                     - Sends status after every received message.
 
+v1.0.2 - added ability to disable periodic updates 
 
 
 */
