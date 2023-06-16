@@ -62,7 +62,8 @@ ee_prop::ee_prop(const char *room, const char *name, bool useId, const char *ver
     updateInterval = 30000;
 
     chipId.toUpperCase();
-
+    clientId = _name + "_" + chipId;
+   
     // set subscription topics
 
     sprintf(topics[topicCount++], "eeprop");
@@ -216,7 +217,7 @@ void ee_prop::reconnect()
     {
         DEBUGprint("Attempting MQTT connection...");
         // Attempt to connect
-        if (_mqtt_client.connect(chipId.c_str(), "", "", lwtTopic, 0, true, "Offline"))
+        if (_mqtt_client.connect(clientId.c_str(), "", "", lwtTopic, 0, true, "Offline"))
         {
             DEBUGprintln("connected");
             // Once connected, publish an announcement...
