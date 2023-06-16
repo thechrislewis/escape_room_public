@@ -29,6 +29,7 @@ private:
     String _name;
     String _room;
     String chipId;
+    String clientId;
     String _version;
 
     char lwtTopic[32];
